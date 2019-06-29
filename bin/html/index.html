@@ -1,0 +1,56 @@
+<html>
+    <head>
+        <title>sylar chat room</title>
+    </head>
+    <script type="text/javascript">
+        var websocket = null;
+        function write_msg(msg) {
+            document.getElementById("message").innerHTML += msg + "<br/>"
+        }
+        function login() {
+            websocket = new WebSocket("ws://192.168.1.5:8072/sylar/chat");
+
+            websocket.onerror = function() {
+                write_msg("onerror");
+            }
+
+            websocket.onopen = function() {
+                var o = {}
+                o.type = "login_request"
+                o.name = document.getElementById('tname').value;
+                websocket.send(JSON.stringify(o));
+            }
+
+            websocket.onmessage= function(e) {
+                //alert("onmessage " + e.data);
+                var o = JSON.parse(e.data);
+                if(o.type == "user_enter") {
+                    write_msg("[" + o.time + "][" + o.name + "] 加入聊天室");
+                } else if(o.type == "user_leave") {
+                    write_msg("[" + o.time + "][" + o.name + "] 离开聊天室");
+                } else if(o.type == "msg") {
+                    write_msg("[" + o.time + "][" + o.name + "] " + o.msg);
+                } else if(o.type == "login_response") {
+                    write_msg("[" + o.result + "][" + o.msg+ "]");
+                }
+            }
+
+            websocket.onclose= function() {
+                write_msg("服务器断开");
+            }
+        }
+
+        function sendmsg() {
+            var o = {}
+            o.type = "send_request";
+            o.msg = document.getElementById('msg').value;
+            websocket.send(JSON.stringify(o));
+        }
+    </script>
+    <body>
+        昵称:<input id="tname" type="text"/><button onclick="login()">登录</button><br/>
+        聊天信息:<input id="msg" type="text"/><button onclick="sendmsg()">发送</button><br/>
+        <div id="message">
+        </div>
+    </body>
+</html>
